@@ -1,5 +1,6 @@
 package de.minedesso.banPlugin;
 
+import de.minedesso.banPlugin.domain.BanService;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -14,7 +15,16 @@ public final class BanPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        initializeServices();
         logger.info("Ban plugin has been enabled.");
+    }
+
+    private void initializeServices() {
+        try {
+            BanService.getInstance();
+        } catch (Exception e) {
+            logger.warning("Failed to initialize Services: " + e.getMessage());
+        }
     }
 
     @Override

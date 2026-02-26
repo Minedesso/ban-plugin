@@ -2,3 +2,6 @@ name: Ban-Plugin
 version: '0.0.1'
 main: de.minedesso.banPlugin.BanPlugin
 api-version: '1.21'
+commands:
+  ban:
+    description: Ban a player from the server.
