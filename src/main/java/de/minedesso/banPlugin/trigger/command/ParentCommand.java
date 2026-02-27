@@ -1,4 +1,4 @@
-package de.minedesso.banPlugin.trigger;
+package de.minedesso.banPlugin.trigger.command;
 
 import de.minedesso.banPlugin.util.ICommand;
 import de.minedesso.banPlugin.util.MessageType;

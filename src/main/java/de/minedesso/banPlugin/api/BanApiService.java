@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public class BanApiService extends BaseApiService {
 
@@ -35,7 +36,31 @@ public class BanApiService extends BaseApiService {
             encoded = encoded.replace("+", "%20");
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl + "/ban/validate/" + encoded))
+                    .uri(URI.create(apiUrl + "/ban/validate?name=" + encoded))
+                    .GET()
+                    .header(HEADER_ACCEPT, APPLICATION_JSON)
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() == 200;
+        } catch (InterruptedException ie) {
+            // Restore interrupt status and return false as fallback
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a player is already banned by UUID.
+     * @param uuid the UUID of the player to check
+     * @return true if the player is banned, false otherwise
+     */
+    public boolean isPlayerBanned(UUID uuid) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl + "/ban/validate/" + uuid.toString()))
                     .GET()
                     .header(HEADER_ACCEPT, APPLICATION_JSON)
                     .build();

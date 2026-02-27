@@ -1,4 +1,4 @@
-package de.minedesso.banPlugin.trigger.sub;
+package de.minedesso.banPlugin.trigger.command.sub;
 
 import de.minedesso.banPlugin.domain.BanService;
 import de.minedesso.banPlugin.util.ICommand;
@@ -6,7 +6,6 @@ import de.minedesso.banPlugin.util.MessageType;
 import de.minedesso.banPlugin.util.MessageUtil;
 import de.minedesso.banPlugin.util.PermissionType;
 import de.minedesso.banPlugin.util.exception.PlayerAlreadyBannedException;
-import de.minedesso.banPlugin.util.exception.PlayerNotFoundException;
 import org.bukkit.command.CommandSender;
 
 public class BanCommand implements ICommand {
