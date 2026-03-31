@@ -1,5 +1,6 @@
 package de.minedesso.banPlugin.api;
 
+import de.minedesso.banPlugin.api.in.BanDetailsDto;
 import de.minedesso.banPlugin.api.out.BanDto;
 
 import java.net.URI;
@@ -79,9 +80,9 @@ public class BanApiService extends BaseApiService {
     /**
      * Creates a new ban for a player.
      * @param banDto the ban data to send to the API
-     * @return true if the ban was created successfully, false otherwise
+     * @return a BanDetailsDto containing the details of the created ban, or null if the creation failed
      */
-    public boolean createBan(BanDto banDto) {
+    public BanDetailsDto createBan(BanDto banDto) {
         try {
             String json = objectMapper.writeValueAsString(banDto);
 
@@ -93,15 +94,40 @@ public class BanApiService extends BaseApiService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            int status = response.statusCode();
-            return status == 200 || status == 201;
+
+            return objectMapper.readValue(response.body(), BanDetailsDto.class);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            return false;
+            return null;
         } catch (Exception e) {
-            return false;
+            return null;
+        }
+    }
+
+    /**
+     * Retrieves the ban information for a player by UUID.
+     * @param uuid the UUID of the player
+     * @return a BanDetailsDto containing the ban information, or null if the player is not banned
+     */
+    public BanDetailsDto getBan(UUID uuid) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl + "/ban/" + uuid.toString()))
+                    .GET()
+                    .header(HEADER_ACCEPT, APPLICATION_JSON)
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                return null;
+            }
+
+            return objectMapper.readValue(response.body(), BanDetailsDto.class);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception e) {
+            return null;
         }
     }
 }
-
-

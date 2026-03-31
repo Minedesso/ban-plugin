@@ -3,10 +3,12 @@ package de.minedesso.banPlugin.domain;
 import de.minedesso.banPlugin.BanPlugin;
 import de.minedesso.banPlugin.api.BanApiService;
 import de.minedesso.banPlugin.api.ReasonApiService;
+import de.minedesso.banPlugin.api.in.BanDetailsDto;
 import de.minedesso.banPlugin.api.out.BanDto;
-import de.minedesso.banPlugin.trigger.command.BanCommand;
 import de.minedesso.banPlugin.trigger.command.ParentCommand;
+import de.minedesso.banPlugin.trigger.command.sub.BanCommand;
 import de.minedesso.banPlugin.util.exception.PlayerAlreadyBannedException;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -17,11 +19,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public class BanService implements IService {
+public class BanService implements BanUseCase {
 
     private final BanApiService banApiService;
     private final ReasonApiService reasonApiService;
     private static BanService instance;
+    private static final String APPEAL_URL = "https://minedesso.de/appeal";
 
     private BanService() {
         banApiService = BanApiService.getInstance();
@@ -58,10 +61,15 @@ public class BanService implements IService {
         String playerName = getPlayerName(sender);
 
         BanDto banDto = new BanDto(reasonIdLong, duration, now, playerName);
-        boolean success = banApiService.createBan(banDto);
-        if (!success) {
-            throw new IllegalArgumentException("Failed to create ban");
+        BanDetailsDto banDetailsDto = banApiService.createBan(banDto);
+        if (banDetailsDto != null) {
+            Player target = Bukkit.getPlayer(targetName);
+            if (target != null) {
+                kickPlayer(target, banDetailsDto);
+            }
+            return;
         }
+        throw new IllegalArgumentException("Failed to create ban");
     }
 
     @Override
@@ -70,17 +78,21 @@ public class BanService implements IService {
     }
 
     @Override
-    public void kickPlayer(Player player) {
-        BanDto banDto = banApiService.getBan(player.getUniqueId());
-        if (banDto != null) {
+    public void kickPlayer(Player player, BanDetailsDto banDetailsDto) {
+        if (banDetailsDto != null) {
             String kickMessage = getKickMessage(
-                    banDto.getBannedBy(),
-                    banDto.getBannedAt(),
-                    reasonApiService.getReasonById(banDto.getReasonId()).getDescription(),
-                    banApiService.getBanExpiration(banDto)
+                    banDetailsDto.getBannedBy(),
+                    banDetailsDto.getBannedAt(),
+                    banDetailsDto.getReason(),
+                    banDetailsDto.getExpiresAt()
             );
             player.kickPlayer(kickMessage);
         }
+    }
+
+    public void kickPlayer(Player player) {
+        BanDetailsDto banDetailsDto = banApiService.getBan(player.getUniqueId());
+        kickPlayer(player, banDetailsDto);
     }
 
     private String getKickMessage(String bannedBy, LocalDateTime bannedAt, String reason, LocalDateTime expiration) {
@@ -96,8 +108,8 @@ public class BanService implements IService {
                 &7Expires in: &b%s
                 
                 &3You can appeal this ban at:
-                &bhttps://minedesso.de/appeal
-                """, bannedBy, bannedAtStr, reason, expirationStr);
+                &b%s
+                """, bannedBy, bannedAtStr, reason, expirationStr, APPEAL_URL);
     }
 
     private String getExpirationAsString(LocalDateTime expiration) {
@@ -173,6 +185,7 @@ public class BanService implements IService {
     private void initializeCommands() {
         ParentCommand parentCommand = new ParentCommand(List.of(
                 new BanCommand()
+                // Future commands like unban, kick etc. can be added here
         ));
 
         Objects.requireNonNull(BanPlugin.getInstance().getCommand("/ban")).setExecutor(parentCommand);
