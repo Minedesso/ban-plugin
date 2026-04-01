@@ -3,10 +3,13 @@ package de.minedesso.banPlugin.domain;
 import de.minedesso.banPlugin.BanPlugin;
 import de.minedesso.banPlugin.api.BanApiService;
 import de.minedesso.banPlugin.api.ReasonApiService;
-import de.minedesso.banPlugin.api.in.BanDetailsDto;
+import de.minedesso.banPlugin.api.in.Ban;
 import de.minedesso.banPlugin.api.out.BanDto;
 import de.minedesso.banPlugin.trigger.command.ParentCommand;
 import de.minedesso.banPlugin.trigger.command.sub.BanCommand;
+import de.minedesso.banPlugin.trigger.command.sub.ReasonCommand;
+import de.minedesso.banPlugin.util.MessageType;
+import de.minedesso.banPlugin.util.MessageUtil;
 import de.minedesso.banPlugin.util.exception.PlayerAlreadyBannedException;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -58,14 +61,14 @@ public class BanService implements BanUseCase {
 
         long reasonIdLong = Long.parseLong(reasonId);
         LocalDateTime now = LocalDateTime.now();
-        String playerName = getPlayerName(sender);
+        UUID playerUUID = getPlayerUUID(sender);
 
-        BanDto banDto = new BanDto(reasonIdLong, duration, now, playerName);
-        BanDetailsDto banDetailsDto = banApiService.createBan(banDto);
-        if (banDetailsDto != null) {
+        BanDto banDto = new BanDto(reasonIdLong, duration, now, targetName, playerUUID);
+        Ban ban = banApiService.createBan(banDto);
+        if (ban != null) {
             Player target = Bukkit.getPlayer(targetName);
             if (target != null) {
-                kickPlayer(target, banDetailsDto);
+                kickPlayer(target, ban);
             }
             return;
         }
@@ -78,26 +81,37 @@ public class BanService implements BanUseCase {
     }
 
     @Override
-    public void kickPlayer(Player player, BanDetailsDto banDetailsDto) {
-        if (banDetailsDto != null) {
-            String kickMessage = getKickMessage(
-                    banDetailsDto.getBannedBy(),
-                    banDetailsDto.getBannedAt(),
-                    banDetailsDto.getReason(),
-                    banDetailsDto.getExpiresAt()
-            );
-            player.kickPlayer(kickMessage);
-        }
+    public void kickPlayer(Player player, Ban ban) {
+        String kickMessage = getKickMessage(
+                ban.getBannedBy(),
+                ban.getBannedAt(),
+                ban.getReason(),
+                ban.getExpiresAt()
+        );
+        player.kickPlayer(kickMessage);
     }
 
     public void kickPlayer(Player player) {
-        BanDetailsDto banDetailsDto = banApiService.getBan(player.getUniqueId());
-        kickPlayer(player, banDetailsDto);
+        Ban ban = banApiService.getBan(player.getUniqueId());
+        if(ban != null) kickPlayer(player, ban);
+    }
+
+    public void sendBanReasons(CommandSender sender) {
+        String border = MessageType.PREFIX.message + "&cBan reasons:\n";
+        List<String> reasons = reasonApiService.getReasons().stream()
+                .map(reason -> String.format("&l&9%d&r &7- &b%s\n", reason.getReasonId(), reason.getReason()))
+                .toList();
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(border);
+        reasons.forEach(stringBuilder::append);
+        MessageUtil.sendMessageToUnknownSender(sender, stringBuilder.append(border).toString());
     }
 
     private String getKickMessage(String bannedBy, LocalDateTime bannedAt, String reason, LocalDateTime expiration) {
         String bannedAtStr = bannedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String expirationStr = getExpirationAsString(expiration);
+        if (bannedBy == null) bannedBy = "SYSTEM";
         return String.format("""
                 &c-= GOODBYE! =-
                 
@@ -156,11 +170,11 @@ public class BanService implements BanUseCase {
         return "";
     }
 
-    private String getPlayerName(CommandSender sender) {
+    private UUID getPlayerUUID(CommandSender sender) {
         if (sender instanceof Player player) {
-            return player.getName();
+            return player.getUniqueId();
         }
-        return "SYSTEM";
+        return null; // For console or other non-player senders, we can return null or a specific UUID
     }
 
     private boolean isReasonValid(String reasonIdString) {
@@ -184,7 +198,8 @@ public class BanService implements BanUseCase {
 
     private void initializeCommands() {
         ParentCommand parentCommand = new ParentCommand(List.of(
-                new BanCommand()
+                new BanCommand(),
+                new ReasonCommand()
                 // Future commands like unban, kick etc. can be added here
         ));
 

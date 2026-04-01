@@ -2,7 +2,7 @@ package de.minedesso.banPlugin.util;
 
 import org.bukkit.command.CommandSender;
 
-public interface ICommand {
+public interface SubCommand {
     String name();
 
     String permission();

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BanDetailsDto {
+public class Ban {
 
     private LocalDateTime bannedAt;
     private LocalDateTime expiresAt;

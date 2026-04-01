@@ -5,3 +5,4 @@ api-version: '1.21'
 commands:
   ban:
     description: Ban a player from the server.
+    aliases: [banreasons]

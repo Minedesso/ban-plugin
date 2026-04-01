@@ -1,6 +1,6 @@
 package de.minedesso.banPlugin.api;
 
-import de.minedesso.banPlugin.api.in.BanDetailsDto;
+import de.minedesso.banPlugin.api.in.Ban;
 import de.minedesso.banPlugin.api.out.BanDto;
 
 import java.net.URI;
@@ -60,14 +60,17 @@ public class BanApiService extends BaseApiService {
      */
     public boolean isPlayerBanned(UUID uuid) {
         try {
+            String uuidString = URLEncoder.encode(uuid.toString(), StandardCharsets.UTF_8);
+            uuidString = uuidString.replace("+", "%20");
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl + "/ban/validate/" + uuid.toString()))
+                    .uri(URI.create(apiUrl + "/ban/check/" + uuidString))
                     .GET()
                     .header(HEADER_ACCEPT, APPLICATION_JSON)
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() == 200;
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // Boolean
+            return objectMapper.readValue(response.body(), Boolean.class);
         } catch (InterruptedException ie) {
             // Restore interrupt status and return false as fallback
             Thread.currentThread().interrupt();
@@ -82,7 +85,7 @@ public class BanApiService extends BaseApiService {
      * @param banDto the ban data to send to the API
      * @return a BanDetailsDto containing the details of the created ban, or null if the creation failed
      */
-    public BanDetailsDto createBan(BanDto banDto) {
+    public Ban createBan(BanDto banDto) {
         try {
             String json = objectMapper.writeValueAsString(banDto);
 
@@ -95,7 +98,8 @@ public class BanApiService extends BaseApiService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            return objectMapper.readValue(response.body(), BanDetailsDto.class);
+            if (response.statusCode() != 200) return null;
+            return objectMapper.readValue(response.body(), Ban.class);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             return null;
@@ -109,10 +113,13 @@ public class BanApiService extends BaseApiService {
      * @param uuid the UUID of the player
      * @return a BanDetailsDto containing the ban information, or null if the player is not banned
      */
-    public BanDetailsDto getBan(UUID uuid) {
+    public Ban getBan(UUID uuid) {
         try {
+            String uuidString = URLEncoder.encode(uuid.toString(), StandardCharsets.UTF_8);
+            uuidString = uuidString.replace("+", "%20");
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl + "/ban/" + uuid.toString()))
+                    .uri(URI.create(apiUrl + "/ban/" + uuidString))
                     .GET()
                     .header(HEADER_ACCEPT, APPLICATION_JSON)
                     .build();
@@ -122,7 +129,7 @@ public class BanApiService extends BaseApiService {
                 return null;
             }
 
-            return objectMapper.readValue(response.body(), BanDetailsDto.class);
+            return objectMapper.readValue(response.body(), Ban.class);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             return null;

@@ -1,6 +1,6 @@
 package de.minedesso.banPlugin.trigger.command;
 
-import de.minedesso.banPlugin.util.ICommand;
+import de.minedesso.banPlugin.util.SubCommand;
 import de.minedesso.banPlugin.util.MessageType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,15 +13,15 @@ import java.util.Map;
 
 public class ParentCommand implements CommandExecutor {
 
-    private final Map<String, ICommand> subCommands = new HashMap<>();
+    private final Map<String, SubCommand> subCommands = new HashMap<>();
 
-    public ParentCommand(List<ICommand> subCommands) {
+    public ParentCommand(List<SubCommand> subCommands) {
         subCommands.forEach(subCommand -> {this.subCommands.put(subCommand.name(), subCommand);});
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        ICommand command = subCommands.get(label);
+        SubCommand command = subCommands.get(label);
 
         if(command.playerOnly() && !(sender instanceof Player)) {
             sender.sendMessage(MessageType.ONLY_PLAYER.message);

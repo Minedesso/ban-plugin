@@ -1,14 +1,14 @@
 package de.minedesso.banPlugin.trigger.command.sub;
 
 import de.minedesso.banPlugin.domain.BanService;
-import de.minedesso.banPlugin.util.ICommand;
+import de.minedesso.banPlugin.util.SubCommand;
 import de.minedesso.banPlugin.util.MessageType;
 import de.minedesso.banPlugin.util.MessageUtil;
 import de.minedesso.banPlugin.util.PermissionType;
 import de.minedesso.banPlugin.util.exception.PlayerAlreadyBannedException;
 import org.bukkit.command.CommandSender;
 
-public class BanCommand implements ICommand {
+public class BanCommand implements SubCommand {
 
     @Override
     public String name() {
@@ -30,6 +30,8 @@ public class BanCommand implements ICommand {
         if(args.length != 3) {
             sender.sendMessage(MessageUtil.convertToNoColor(
                     MessageType.USAGE.message + "/ban <player|uuid> <reasonId> <duration>"));
+            sender.sendMessage(MessageUtil.convertToNoColor(
+                    MessageType.USAGE.message + "Duration format examples: '1d', '2h', '30m', '2y', 'perm'"));
             return;
         }
 

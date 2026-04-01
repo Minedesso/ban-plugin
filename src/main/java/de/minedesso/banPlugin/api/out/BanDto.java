@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,7 +16,8 @@ public class BanDto {
     private String duration;
     private LocalDateTime bannedAt;
 
-    private String bannedBy;
+    private String targetName;
+    private UUID bannedBy;
 
 }
 

@@ -1,6 +1,6 @@
 package de.minedesso.banPlugin.domain;
 
-import de.minedesso.banPlugin.api.in.BanDetailsDto;
+import de.minedesso.banPlugin.api.in.Ban;
 import de.minedesso.banPlugin.util.exception.PlayerAlreadyBannedException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -14,5 +14,5 @@ public interface BanUseCase {
 
     boolean isBanned(UUID uuid);
 
-    void kickPlayer(Player player, BanDetailsDto banDetailsDto);
+    void kickPlayer(Player player, Ban ban);
 }
