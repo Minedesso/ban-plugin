@@ -28,10 +28,10 @@ public class BanCommand implements SubCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if(args.length != 3) {
-            sender.sendMessage(MessageUtil.convertToNoColor(
-                    MessageType.USAGE.message + "/ban <player|uuid> <reasonId> <duration>"));
-            sender.sendMessage(MessageUtil.convertToNoColor(
-                    MessageType.USAGE.message + "Duration format examples: '1d', '2h', '30m', '2y', 'perm'"));
+            MessageUtil.sendMessageToUnknownSender(sender,
+                    MessageType.USAGE.message + "/ban <player|uuid> <reasonId> <duration>");
+            MessageUtil.sendMessageToUnknownSender(sender,
+                    MessageType.USAGE.message + "Duration format examples: '1d', '2h', '30m', '2y', 'perm'");
             return;
         }
 
