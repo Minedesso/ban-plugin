@@ -22,7 +22,7 @@ public class PlayerJoinListener implements Listener {
         UUID uuid = player.getUniqueId();
 
         if (banService.isBanned(uuid)) {
-            banService.kickPlayer(player);
+            banService.kickPlayerAfterBan(player);
         }
     }
 

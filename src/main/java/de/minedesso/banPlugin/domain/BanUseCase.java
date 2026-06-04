@@ -14,5 +14,7 @@ public interface BanUseCase {
 
     boolean isBanned(UUID uuid);
 
-    void kickPlayer(Player player, Ban ban);
+    void kickPlayerAfterBan(Player player, Ban ban);
+
+    void kickPlayer(CommandSender sender, Player target, String reason);
 }

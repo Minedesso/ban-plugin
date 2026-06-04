@@ -7,6 +7,7 @@ import de.minedesso.banPlugin.api.in.Ban;
 import de.minedesso.banPlugin.api.out.BanDto;
 import de.minedesso.banPlugin.trigger.command.ParentCommand;
 import de.minedesso.banPlugin.trigger.command.sub.BanCommand;
+import de.minedesso.banPlugin.trigger.command.sub.KickCommand;
 import de.minedesso.banPlugin.trigger.command.sub.ReasonCommand;
 import de.minedesso.banPlugin.util.MessageType;
 import de.minedesso.banPlugin.util.MessageUtil;
@@ -68,7 +69,9 @@ public class BanService implements BanUseCase {
         if (ban != null) {
             Player target = Bukkit.getPlayer(targetName);
             if (target != null) {
-                kickPlayer(target, ban);
+                kickPlayerAfterBan(target, ban);
+                MessageUtil.sendMessageToUnknownSender(sender,
+                        MessageType.PREFIX.message + "§c" + target.getName() + " §7has been banned.");
             }
             return;
         }
@@ -81,8 +84,8 @@ public class BanService implements BanUseCase {
     }
 
     @Override
-    public void kickPlayer(Player player, Ban ban) {
-        String kickMessage = getKickMessage(
+    public void kickPlayerAfterBan(Player player, Ban ban) {
+        String kickMessage = getKickMessageFromBan(
                 ban.getBannedBy(),
                 ban.getBannedAt(),
                 ban.getReason(),
@@ -91,15 +94,24 @@ public class BanService implements BanUseCase {
         player.kickPlayer(kickMessage);
     }
 
-    public void kickPlayer(Player player) {
+    @Override
+    public void kickPlayer(CommandSender sender, Player target, String reason) {
+        String kickedBy = sender.getName();
+        String kickMessage = getKickMessage(kickedBy, reason);
+        target.kickPlayer(kickMessage);
+        MessageUtil.sendMessageToUnknownSender(sender,
+                MessageType.PREFIX.message + "§c" + target.getName() + " §7has been kicked.");
+    }
+
+    public void kickPlayerAfterBan(Player player) {
         Ban ban = banApiService.getBan(player.getUniqueId());
-        if(ban != null) kickPlayer(player, ban);
+        if (ban != null) kickPlayerAfterBan(player, ban);
     }
 
     public void sendBanReasons(CommandSender sender) {
-        String border = MessageType.PREFIX.message + "&cBan reasons:\n";
+        String border = MessageType.PREFIX.message + "§cBan reasons:\n";
         List<String> reasons = reasonApiService.getReasons().stream()
-                .map(reason -> String.format("&l&9%d&r &7- &b%s\n", reason.getReasonId(), reason.getReason()))
+                .map(reason -> String.format("§l§9%d§r §7- §b%s\n", reason.getReasonId(), reason.getReason()))
                 .toList();
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -108,22 +120,33 @@ public class BanService implements BanUseCase {
         MessageUtil.sendMessageToUnknownSender(sender, stringBuilder.append(border).toString());
     }
 
-    private String getKickMessage(String bannedBy, LocalDateTime bannedAt, String reason, LocalDateTime expiration) {
+    private String getKickMessageFromBan(String bannedBy, LocalDateTime bannedAt, String reason, LocalDateTime expiration) {
         String bannedAtStr = bannedAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String expirationStr = getExpirationAsString(expiration);
         if (bannedBy == null) bannedBy = "SYSTEM";
         return String.format("""
-                &c-= GOODBYE! =-
+                §c-= GOODBYE! =-
                 
-                &7You have been banned by &6%s
-                &7Banned on: &b%s
-                &7Reason: &b%s
+                §7You have been banned by §6%s
+                §7Banned on: §b%s
+                §7Reason: §b%s
                 
-                &7Expires in: &b%s
+                §7Expires in: §b%s
                 
-                &3You can appeal this ban at:
-                &b%s
+                §3You can appeal this ban at:
+                §b%s
                 """, bannedBy, bannedAtStr, reason, expirationStr, APPEAL_URL);
+    }
+
+    private String getKickMessage(String kickedBy, String reason) {
+        return String.format("""
+                §c-= SEE YOU NEXT TIME! =-
+                
+                §7You have been kicked by §6%s
+                §7Reason: §b%s
+                
+                §3Please follow the server rules to avoid being banned.
+                """, kickedBy, reason);
     }
 
     private String getExpirationAsString(LocalDateTime expiration) {
@@ -189,6 +212,7 @@ public class BanService implements BanUseCase {
 
     /**
      * Validates the duration string to ensure it follows the expected format (e.g., "1d", "2h", "30m", "2y").
+     *
      * @param duration the duration string to validate
      * @return true if the duration is valid, false otherwise
      */
@@ -199,7 +223,8 @@ public class BanService implements BanUseCase {
     private void initializeCommands() {
         ParentCommand parentCommand = new ParentCommand(List.of(
                 new BanCommand(),
-                new ReasonCommand()
+                new ReasonCommand(),
+                new KickCommand()
                 // Future commands like unban, kick etc. can be added here
         ));
 

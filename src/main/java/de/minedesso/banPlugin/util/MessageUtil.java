@@ -5,8 +5,8 @@ import org.bukkit.entity.Player;
 
 public class MessageUtil {
 
-    public static String convertToNoColor(String message) {
-        return message.replaceAll("&[0-9a-fk-or]", "");
+    private static String convertToNoColor(String message) {
+        return message.replaceAll("§[0-9a-fk-or]", "");
     }
 
     public static void sendMessageToUnknownSender(CommandSender sender, String message) {
